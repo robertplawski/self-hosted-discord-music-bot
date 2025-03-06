@@ -21,14 +21,20 @@ async function probeAndCreateResource(readableStream) {
   return createAudioResource(stream, { inputType: type });
 }
 
-const playMusic = async (guild) => {
+const playMusic = async (guild, url) => {
   try {
     const connection = getVoiceConnection(guild.id);
 
     const player = createAudioPlayer();
     const subscription = connection.subscribe(player);
-    console.log(join(__dirname, "../assets/music/test.mp3"));
-    const filedir = join(__dirname, "../assets/music/test.mp3");
+
+    const match = url.match(/(?<=v=)[^&]{11}/);
+    if (!match) {
+      console.log("invalid id");
+      return null;
+    }
+    const id = match[0];
+    const filedir = join(__dirname, `../assets/music/${id}.m4a`);
     const resource = await probeAndCreateResource(createReadStream(filedir));
     console.log(resource);
     player.on("error", (error) => {

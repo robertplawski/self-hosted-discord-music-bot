@@ -9,6 +9,8 @@
     "dotenv": "^16.4.7",
     "ffmpeg-static": "^5.2.0",
     "libsodium-wrappers": "^0.7.15",
-    "opusscript": "^0.0.8"
+    "opusscript": "^0.0.8",
+    "youtube-dl-exec": "^3.0.16",
+    "ytdl-core": "^4.11.5"
   }
 }

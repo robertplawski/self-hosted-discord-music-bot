@@ -13,6 +13,15 @@ module.exports = {
         .setRequired(true)
     ),
   async execute(interaction) {
-    download(url);
+    const url = interaction.options.getString("url");
+    try {
+      await interaction.reply("Starting a file download");
+      await download(url);
+
+      await interaction.editReply("File download finished");
+    } catch (err) {
+      console.error(err);
+      interaction.reply(`Something went wrong when downloading a file`);
+    }
   },
 };
