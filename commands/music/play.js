@@ -17,14 +17,13 @@ module.exports = {
   async execute(interaction) {
     const url = interaction.options.getString("url");
 
-    const { guild } = interaction;
-    const result = await playMusic(guild, url);
-    if (result) {
+    await playMusic(interaction, url);
+    /*if (result) {
       await interaction.reply("Playing...");
     } else {
       await interaction.reply(
         "Something went wrong, probably bot is not in the voice channel or you dunce didn't provide an actual youtube link"
       );
-    }
+    }*/
   },
 };
