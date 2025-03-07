@@ -4,11 +4,18 @@ const {
   createAudioResource,
   demuxProbe,
   joinVoiceChannel,
+  AudioPlayerStatus,
 } = require("@discordjs/voice");
 const { download } = require("./download");
 const fs = require("fs").promises;
 const { createReadStream } = require("node:fs");
 const { join } = require("node:path");
+const {
+  pushToQueue,
+  getFromQueue,
+  popFromQueue,
+  hasSongQueued,
+} = require("./queue");
 
 const joinChannel = async (voiceChannel, guild) => {
   // interaction.user is the object representing the User who ran the command
@@ -37,6 +44,17 @@ async function probeAndCreateResource(readableStream) {
   return createAudioResource(stream, { inputType: type });
 }
 
+const playFromQueue = async (player, guild) => {
+  const latestDir = getFromQueue(guild);
+
+  if (latestDir) {
+    const resource = await probeAndCreateResource(createReadStream(latestDir));
+
+    player.play(resource);
+  }
+};
+var player;
+
 const playMusic = async (interaction, url) => {
   const { member, guild } = interaction;
   await interaction.reply("Working..");
@@ -51,7 +69,9 @@ const playMusic = async (interaction, url) => {
     }
     connection = getVoiceConnection(guild.id);
 
-    const player = createAudioPlayer();
+    if (!player) {
+      player = createAudioPlayer();
+    }
     const subscription = connection.subscribe(player);
 
     const match = url.match(/(?<=v=)[^&]{11}/);
@@ -69,15 +89,35 @@ const playMusic = async (interaction, url) => {
       // # plaese download it here
 
       await interaction.editReply("Started the download...");
+      if (!hasSongQueued(guild.id)) {
+        const resource = await probeAndCreateResource(
+          createReadStream(join(__dirname, `../assets/music/difficulty.m4a`))
+        );
+
+        player.play(resource);
+      }
       await download(url);
       await interaction.editReply("Finished the download...");
     }
 
-    //https://www.youtube.com/watch?v=rYNbuSzzNrs&pp=ygURa2F6aWsgdGF0YSBkaWxlcmE%3D
-    const resource = await probeAndCreateResource(createReadStream(filedir));
+    await interaction.editReply("Added to queue...");
+    if (hasSongQueued(guild.id)) {
+      pushToQueue(filedir, guild.id);
+      return;
+    }
+    pushToQueue(filedir, guild.id);
+    playFromQueue(player, guild.id);
+    //playFromQueue(player, popFromQueue(guild.id));
 
-    player.play(resource);
-    await interaction.editReply("Playing...");
+    player.on(AudioPlayerStatus.Idle, async () => {
+      popFromQueue(guild.id);
+      playFromQueue(player, guild.id);
+    });
+
+    player.on(AudioPlayerStatus.Playing, async () => {
+      await interaction.editReply("Playing...");
+    });
+    //https://www.youtube.com/watch?v=rYNbuSzzNrs&pp=ygURa2F6aWsgdGF0YSBkaWxlcmE%3D
 
     return subscription;
   } catch (error) {
@@ -85,4 +125,5 @@ const playMusic = async (interaction, url) => {
     return null;
   }
 };
+
 module.exports = { getVoiceChannel, playMusic };
