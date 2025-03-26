@@ -1,5 +1,12 @@
 var queue = {};
 
+const clearQueue = (guild) => {
+  if (!queue[guild]) {
+    queue[guild] = [];
+  }
+  queue[guild] = [];
+};
+
 const pushToQueue = (songId, guild) => {
   console.log(queue);
 
@@ -48,4 +55,5 @@ module.exports = {
   hasSongQueued,
   getFromQueue,
   getQueueForGuild,
+  clearQueue,
 };

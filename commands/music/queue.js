@@ -16,6 +16,9 @@ module.exports = {
 
       return;
     }
-    await interaction.reply(JSON.stringify(queue));
+
+    const items = queue.map((value) => value.substr(value.length - 15));
+
+    await interaction.reply(JSON.stringify(items));
   },
 };

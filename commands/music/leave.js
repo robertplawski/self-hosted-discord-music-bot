@@ -2,6 +2,8 @@ const { getVoiceConnection } = require("@discordjs/voice");
 
 const { SlashCommandBuilder } = require("discord.js");
 
+const { clearQueue } = require("../../tools/queue");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
@@ -9,7 +11,7 @@ module.exports = {
   async execute(interaction) {
     const { guild } = interaction;
     const connection = getVoiceConnection(guild.id);
-
+    clearQueue(guild.id);
     try {
       connection.destroy();
 

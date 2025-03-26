@@ -16,6 +16,7 @@ const {
   popFromQueue,
   hasSongQueued,
 } = require("./queue");
+const { createFileFromId } = require("./path");
 
 const joinChannel = async (voiceChannel, guild) => {
   // interaction.user is the object representing the User who ran the command
@@ -81,32 +82,58 @@ const playMusic = async (interaction, url) => {
       return;
     }
     const id = match[0];
-    const filedir = join(__dirname, `../assets/music/${id}.m4a`);
+    const filedir = createFileFromId(id);
 
-    try {
-      await fs.access(filedir);
-    } catch (e) {
-      // # plaese download it here
+    //try {
+    //  await fs.access(filedir);
+    //} catch (e) {
+    // # plaese download it here
 
-      await interaction.editReply("Started the download...");
-      if (!hasSongQueued(guild.id)) {
-        const resource = await probeAndCreateResource(
-          createReadStream(join(__dirname, `../assets/music/difficulty.m4a`))
+    await interaction.editReply("Started the download...");
+    if (!hasSongQueued(guild.id)) {
+      const resource = await probeAndCreateResource(
+        createReadStream(join(__dirname, `../assets/music/difficulty.m4a`))
+      );
+
+      player.play(resource);
+    }
+
+    const songCallback = (downloadedSongs) => {
+      console.error("Test");
+      console.log(downloadedSongs);
+      const hadSongQueued = hasSongQueued(guild.id);
+      if (downloadedSongs) {
+        downloadedSongs.forEach((id) =>
+          pushToQueue(createFileFromId(id), guild.id)
         );
-
-        player.play(resource);
+      } else {
+        pushToQueue(filedir, guild.id);
       }
-      await download(url);
-      await interaction.editReply("Finished the download...");
-    }
 
-    await interaction.editReply("Added to queue...");
-    if (hasSongQueued(guild.id)) {
-      pushToQueue(filedir, guild.id);
+      if (hadSongQueued) {
+        return;
+      }
+
+      playFromQueue(player, guild.id);
+    };
+
+    download(url, songCallback, interaction);
+    //await interaction.editReply("Finished the downloading all songs...");
+    //}
+
+    //await interaction.editReply("Added to queue...");
+    /* if (hasSongQueued(guild.id)) {
+      if (downloadedSongs) {
+        downloadedSongs.forEach((id) =>
+          pushToQueue(createFileFromId(id), guild.id)
+        );
+      } else {
+        pushToQueue(filedir, guild.id);
+      }
+
       return;
-    }
-    pushToQueue(filedir, guild.id);
-    playFromQueue(player, guild.id);
+    }*/
+
     //playFromQueue(player, popFromQueue(guild.id));
 
     player.on(AudioPlayerStatus.Idle, async () => {
@@ -114,9 +141,9 @@ const playMusic = async (interaction, url) => {
       playFromQueue(player, guild.id);
     });
 
-    player.on(AudioPlayerStatus.Playing, async () => {
+    /*player.on(AudioPlayerStatus.Playing, async () => {
       await interaction.editReply("Playing...");
-    });
+    });*/
     //https://www.youtube.com/watch?v=rYNbuSzzNrs&pp=ygURa2F6aWsgdGF0YSBkaWxlcmE%3D
 
     return subscription;
