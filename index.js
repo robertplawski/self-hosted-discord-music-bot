@@ -73,3 +73,7 @@ client.once(Events.ClientReady, (readyClient) => {
 
 // Log in to Discord with your client's token
 client.login(token);
+
+process.on("uncaughtException", function (err) {
+  console.log("Caught exception: " + err);
+});
