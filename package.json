@@ -1,9 +1,9 @@
 {
   "scripts": {
-    "dev": "node index.js",
+    "dev": "nodemon index.js",
     "prod": "node index.js",
     "commands": "node deploy-commands.js",
-    "test":"jest"
+    "test": "jest"
   },
   "dependencies": {
     "@discordjs/voice": "^0.18.0",

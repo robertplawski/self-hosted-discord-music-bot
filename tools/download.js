@@ -1,6 +1,7 @@
 const ffmpegPath = require("ffmpeg-static");
 const youtubedl = require("youtube-dl-exec");
 const { createFileFromId, doesSongExist } = require("./path");
+const { progressCallback } = require("./progressBar");
 
 const getVideoIDs = async (url) => {
   const data = await youtubedl(url, {
@@ -37,13 +38,17 @@ const getSongMetadata = async (id) => {
   return data;
 };
 
-const download = async (url, songLoadedCallback, statusChangedCallback) => {
+const download = async (
+  url,
+  songLoadedCallback,
+  statusChangedCallback,
+  user
+) => {
   await statusChangedCallback(`Getting videos from url...`);
   try {
     let songs = await getVideoIDs(url);
 
     await statusChangedCallback(`Got all videos from url`);
-
     const progressCallback = async (word, index, length) => {
       await statusChangedCallback(
         `${word}, ${index + 1} / ${length} - ${((index + 1) / length) * 100}%`
@@ -61,7 +66,13 @@ const download = async (url, songLoadedCallback, statusChangedCallback) => {
         await progressCallback("Downloaded", i, songs.length);
       }
 
-      await songLoadedCallback(id);
+      const metadata = await getSongMetadata(id);
+      await songLoadedCallback({
+        id,
+        requestedBy: user,
+        url: "https://youtube.com/watch?v=" + id,
+        ...metadata,
+      });
       await progressCallback("Pushed to queue", i, songs.length);
     }
 
@@ -69,6 +80,7 @@ const download = async (url, songLoadedCallback, statusChangedCallback) => {
       `Finished loading all songs, adding to queue or playing if queue is empty`
     );
   } catch (e) {
+    console.error(e);
     await statusChangedCallback("Error occurred when downloading songs: " + e);
   }
 };

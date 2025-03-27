@@ -3,21 +3,21 @@ const { getProgressBar } = require("./progressBar");
 
 const COLOR = 0x0099ff;
 
-const getNowPlayingQueueEmbed = (
+const getNowPlayingQueueEmbed = ({
   url,
   title,
-  author,
+  channel,
   requestedBy,
   thumbnail,
-  duration
-) => {
+  duration,
+}) => {
   return new EmbedBuilder()
-    .setTitle(`${title} - ${author} `)
+    .setTitle(`${title} - ${channel} `)
     .setDescription(getProgressBar(0, duration))
     .setColor(COLOR)
     .setURL(url)
     .setAuthor({
-      name: `(requested by ${requestedBy})`,
+      name: `(requested by ${requestedBy.tag})`,
       url,
     })
 
@@ -26,6 +26,19 @@ const getNowPlayingQueueEmbed = (
 };
 
 const getQueueEmbed = (queue) => {
+  const defaultFields = [
+    { name: "Queue is empty", value: "Try playing something..." },
+  ];
+  const fields =
+    queue.length == 0
+      ? defaultFields
+      : queue.map(({ id, title, channel, requestedBy }, index) => {
+          return {
+            name: `${index + 1}. ${title} - ${channel} (${id})`,
+            value: `Added by ${requestedBy}`,
+          };
+        }); //[{ name: "1. song - author ()", value: "Added by ..." }];
+
   return (
     new EmbedBuilder()
       .setTitle(`Music queue`)
@@ -37,7 +50,7 @@ const getQueueEmbed = (queue) => {
       // url,
       ///})
       .setTimestamp()
-      .addFields({ name: "1. Stab - Mortician", value: "Added by" })
+      .addFields(fields)
   );
 };
 

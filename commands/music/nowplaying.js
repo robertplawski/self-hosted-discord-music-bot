@@ -13,26 +13,16 @@ module.exports = {
   async execute(interaction) {
     const { guild, user } = interaction;
     const queue = getQueueForGuild(guild.id);
-    const id = queue[0];
+    const song = queue[0];
 
     await interaction.deferReply();
-    if (!id) {
+    if (!song) {
       await interaction.editReply("Nothing is playing right now!");
       return;
     }
 
-    const { fulltitle, channel, duration } = await getSongMetadata(id);
     await interaction.editReply({
-      embeds: [
-        getNowPlayingQueueEmbed(
-          `https://www.youtube.com/watch?v=${id}`,
-          fulltitle,
-          channel,
-          user.username,
-          `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-          duration
-        ),
-      ],
+      embeds: [getNowPlayingQueueEmbed(song)],
     });
     //await wait(10000);
     //await interaction.deleteReply();

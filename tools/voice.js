@@ -40,7 +40,7 @@ async function probeAndCreateResource(readableStream) {
 }
 
 const playFromQueue = async (player, guild) => {
-  const songId = getFromQueue(guild);
+  const { id: songId } = getFromQueue(guild);
   const songPath = createFileFromId(songId);
   if (songPath) {
     const resource = await probeAndCreateResource(createReadStream(songPath));
@@ -51,7 +51,7 @@ const playFromQueue = async (player, guild) => {
 var player;
 
 const playMusic = async (interaction, url) => {
-  const { member, guild } = interaction;
+  const { member, guild, user } = interaction;
   const changeStatus = (status) => interaction.editReply(status);
 
   await interaction.reply("Acknowledged...");
@@ -89,10 +89,10 @@ const playMusic = async (interaction, url) => {
 
     await playWaitingSong();
 
-    const songLoadedCallback = (songId) => {
+    const songLoadedCallback = (song) => {
       const hadSongQueued = hasSongQueued(guild.id);
-      if (songId) {
-        pushToQueue(songId, guild.id);
+      if (song) {
+        pushToQueue(song, guild.id);
       }
 
       if (hadSongQueued) {
@@ -102,7 +102,7 @@ const playMusic = async (interaction, url) => {
       playFromQueue(player, guild.id);
     };
 
-    download(url, songLoadedCallback, changeStatus).then(() =>
+    download(url, songLoadedCallback, changeStatus, user).then(() =>
       interaction.deleteReply()
     );
 
