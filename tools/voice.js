@@ -52,9 +52,9 @@ var player;
 
 const playMusic = async (interaction, url) => {
   const { member, guild } = interaction;
-  const changeStatus = (status)=>interaction.editReply(status)
+  const changeStatus = (status) => interaction.editReply(status);
 
-  await changeStatus("Acknowledged...")
+  await interaction.reply("Acknowledged...");
 
   try {
     let connection = getVoiceConnection(guild.id);
@@ -70,11 +70,11 @@ const playMusic = async (interaction, url) => {
     }
 
     const subscription = connection.subscribe(player);
-    
-    const id = extractIdFromUrl(url)
 
-    if(!id){
-      throw Error("User provided invalid url, cannot extract id")
+    const id = extractIdFromUrl(url);
+
+    if (!id) {
+      throw Error("User provided invalid url, cannot extract id");
     }
 
     const playWaitingSong = async () => {
@@ -85,16 +85,16 @@ const playMusic = async (interaction, url) => {
 
         player.play(resource);
       }
-    } 
+    };
 
-    await playWaitingSong()
+    await playWaitingSong();
 
     const songLoadedCallback = (songId) => {
       const hadSongQueued = hasSongQueued(guild.id);
       if (songId) {
-        pushToQueue(createFileFromId(id), guild.id)
+        pushToQueue(songId, guild.id);
       }
-      
+
       if (hadSongQueued) {
         return;
       }
@@ -102,9 +102,9 @@ const playMusic = async (interaction, url) => {
       playFromQueue(player, guild.id);
     };
 
-
-    download(url, songLoadedCallback, changeStatus)
-      .then(()=>interaction.deleteReply())
+    download(url, songLoadedCallback, changeStatus).then(() =>
+      interaction.deleteReply()
+    );
 
     player.on(AudioPlayerStatus.Idle, async () => {
       popFromQueue(guild.id);
@@ -113,8 +113,11 @@ const playMusic = async (interaction, url) => {
 
     return subscription;
   } catch (error) {
-    await changeStatus("An error occurred when trying to play a song with message: "+ error.message)
-    await setTimeout(()=>interaction.deleteReply(),3000)
+    await changeStatus(
+      "An error occurred when trying to play a song with message: " +
+        error.message
+    );
+    await setTimeout(() => interaction.deleteReply(), 3000);
     console.error(error);
     return null;
   }

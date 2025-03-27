@@ -3,6 +3,9 @@ const { getVoiceConnection } = require("@discordjs/voice");
 const { SlashCommandBuilder } = require("discord.js");
 const { getQueueForGuild } = require("../../tools/queue");
 
+const { EmbedBuilder } = require("discord.js");
+const { getNowPlayingQueueEmbed, getQueueEmbed } = require("../../tools/embed");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("queue")
@@ -10,15 +13,7 @@ module.exports = {
   async execute(interaction) {
     const { guild } = interaction;
     const queue = getQueueForGuild(guild.id);
-    console.log(queue);
-    if (queue.length == 0) {
-      await interaction.reply("The queue is empty try playing something");
 
-      return;
-    }
-
-    const items = queue.map((value) => value.substr(value.length - 15));
-
-    await interaction.reply(JSON.stringify(items));
+    await interaction.reply({ embeds: [getQueueEmbed(queue)] });
   },
 };
