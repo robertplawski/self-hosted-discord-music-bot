@@ -50,9 +50,9 @@ const playFromQueue = async (guild) => {
   }
 };
 
-const skipItemFromQueue = async (guild) => {
-  popFromQueue(guild.id);
-  playFromQueue(guild.id);
+const skipItemFromQueue = async (guildId) => {
+  popFromQueue(guildId);
+  playFromQueue(guildId);
 };
 
 const playMusic = async (interaction, url) => {
