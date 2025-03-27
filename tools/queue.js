@@ -1,51 +1,38 @@
 var queue = {};
 
-const clearQueue = (guild) => {
-  if (!queue[guild]) {
+const prepareGuildQueue = (guild) => {
+  if (queue && !queue[guild]) {
     queue[guild] = [];
   }
+}
+
+const clearQueue = (guild) => {
+  prepareGuildQueue(guild)
   queue[guild] = [];
 };
 
 const pushToQueue = (songId, guild) => {
-  console.log(queue);
-
-  if (!queue[guild]) {
-    queue[guild] = [];
-  }
+  prepareGuildQueue(guild)
   queue[guild].push(songId);
 };
 
 const getFromQueue = (guild) => {
-  if (queue && !queue[guild]) {
-    return;
-  }
-
+  prepareGuildQueue(guild)
   return queue[guild][0];
 };
 
 const popFromQueue = (guild) => {
-  console.log(queue);
-  if (queue && !queue[guild]) {
-    return;
-  }
-  return queue[guild].shift();
+  prepareGuildQueue(guild)
+  return queue[guild].shift() ;
 };
 
 const hasSongQueued = (guild) => {
-  if (queue && !queue[guild]) {
-    return;
-  }
-  if (queue[guild].length == 0) {
-    return false;
-  }
-  return true;
+  prepareGuildQueue(guild)
+  return queue[guild].length > 0
 };
 
 const getQueueForGuild = (guild) => {
-  if (queue && !queue[guild]) {
-    return [];
-  }
+  prepareGuildQueue(guild)
   return queue[guild];
 };
 

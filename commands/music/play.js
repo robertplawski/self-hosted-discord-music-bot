@@ -1,4 +1,3 @@
-const { getVoiceConnection } = require("@discordjs/voice");
 const { playMusic } = require("../../tools/voice.js");
 
 const { SlashCommandBuilder } = require("discord.js");

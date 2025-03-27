@@ -17,10 +17,9 @@ const {
   hasSongQueued,
 } = require("./queue");
 const { createFileFromId } = require("./path");
+const { extractIdFromUrl } = require("./regex");
 
 const joinChannel = async (voiceChannel, guild) => {
-  // interaction.user is the object representing the User who ran the command
-  // interaction.member is the GuildMember object, which represents the user in the specific guild
   if (voiceChannel?.channelId) {
     await joinVoiceChannel({
       channelId: voiceChannel.channelId,
@@ -31,12 +30,7 @@ const joinChannel = async (voiceChannel, guild) => {
 };
 
 const getVoiceChannel = async (member, guild) => {
-  /*const voiceChannel = guild.channels.cache.find(
-    (channel) => channel.type === "voice" && channel.members.has(member.id)
-  );*/
-  console.log(guild.channels);
   const voiceChannel = await guild.voiceStates.fetch(member.id);
-  console.log(voiceChannel);
   return voiceChannel;
 };
 
@@ -46,10 +40,10 @@ async function probeAndCreateResource(readableStream) {
 }
 
 const playFromQueue = async (player, guild) => {
-  const latestDir = getFromQueue(guild);
-
-  if (latestDir) {
-    const resource = await probeAndCreateResource(createReadStream(latestDir));
+  const songId = getFromQueue(guild);
+  const songPath = createFileFromId(songId);
+  if (songPath) {
+    const resource = await probeAndCreateResource(createReadStream(songPath));
 
     player.play(resource);
   }
@@ -58,98 +52,69 @@ var player;
 
 const playMusic = async (interaction, url) => {
   const { member, guild } = interaction;
-  await interaction.reply("Working..");
+  const changeStatus = (status)=>interaction.editReply(status)
+
+  await changeStatus("Acknowledged...")
 
   try {
     let connection = getVoiceConnection(guild.id);
     if (!connection) {
-      //https://www.youtube.com/watch?v=DqBuIaa2-_s&pp=ygURa2F6aWsgdGF0YSBkaWxlcmE%3D
       const voiceChannel = await getVoiceChannel(member, guild);
       await joinChannel(voiceChannel, guild);
-      await interaction.editReply("Joined channel...");
+      await changeStatus("Joined channel...");
     }
     connection = getVoiceConnection(guild.id);
 
     if (!player) {
       player = createAudioPlayer();
     }
+
     const subscription = connection.subscribe(player);
+    
+    const id = extractIdFromUrl(url)
 
-    const match = url.match(/(?<=v=)[^&]{11}/);
-    if (!match) {
-      console.log("invalid id");
-      await interaction.editReply("Invalid id");
-      return;
-    }
-    const id = match[0];
-    const filedir = createFileFromId(id);
-
-    //try {
-    //  await fs.access(filedir);
-    //} catch (e) {
-    // # plaese download it here
-
-    await interaction.editReply("Started the download...");
-    if (!hasSongQueued(guild.id)) {
-      const resource = await probeAndCreateResource(
-        createReadStream(join(__dirname, `../assets/music/difficulty.m4a`))
-      );
-
-      player.play(resource);
+    if(!id){
+      throw Error("User provided invalid url, cannot extract id")
     }
 
-    const songLoadedCallback = (downloadedSongs) => {
-      console.error("Test");
-      console.log(downloadedSongs);
-      const hadSongQueued = hasSongQueued(guild.id);
-      if (downloadedSongs) {
-        downloadedSongs.forEach((id) =>
-          pushToQueue(createFileFromId(id), guild.id)
+    const playWaitingSong = async () => {
+      if (!hasSongQueued(guild.id)) {
+        const resource = await probeAndCreateResource(
+          createReadStream(join(__dirname, `../assets/music/difficulty.m4a`))
         );
-      } else {
-        pushToQueue(filedir, guild.id);
-      }
 
+        player.play(resource);
+      }
+    } 
+
+    await playWaitingSong()
+
+    const songLoadedCallback = (songId) => {
+      const hadSongQueued = hasSongQueued(guild.id);
+      if (songId) {
+        pushToQueue(createFileFromId(id), guild.id)
+      }
+      
       if (hadSongQueued) {
         return;
       }
 
       playFromQueue(player, guild.id);
     };
-    const statusChangedCallback = (status)=>interaction.editReply(status)
-    
-    download(url, songLoadedCallback, statusChangedCallback)
+
+
+    download(url, songLoadedCallback, changeStatus)
       .then(()=>interaction.deleteReply())
-    //await interaction.editReply("Finished the downloading all songs...");
-    //}
-
-    //await interaction.editReply("Added to queue...");
-    /* if (hasSongQueued(guild.id)) {
-      if (downloadedSongs) {
-        downloadedSongs.forEach((id) =>
-          pushToQueue(createFileFromId(id), guild.id)
-        );
-      } else {
-        pushToQueue(filedir, guild.id);
-      }
-
-      return;
-    }*/
-
-    //playFromQueue(player, popFromQueue(guild.id));
 
     player.on(AudioPlayerStatus.Idle, async () => {
       popFromQueue(guild.id);
       playFromQueue(player, guild.id);
     });
 
-    /*player.on(AudioPlayerStatus.Playing, async () => {
-      await interaction.editReply("Playing...");
-    });*/
-    //https://www.youtube.com/watch?v=rYNbuSzzNrs&pp=ygURa2F6aWsgdGF0YSBkaWxlcmE%3D
-
     return subscription;
   } catch (error) {
+    await changeStatus("An error occurred when trying to play a song with message: "+ error.message)
+    await setTimeout(()=>interaction.deleteReply(),3000)
     console.error(error);
     return null;
   }
