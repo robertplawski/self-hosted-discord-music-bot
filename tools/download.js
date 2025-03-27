@@ -12,7 +12,9 @@ const getVideoIDs = async (url) => {
 };
 
 const downloadSingleSong = (id) => {
-  return youtubedl("https://youtube.com/watch/?v=" + id, {
+  const url = "https://youtube.com/watch/?v=" + id;
+
+  return youtubedl(url, {
     output: `assets/music/%(id)s.%(ext)s`,
     ffmpegLocation: ffmpegPath,
     extractAudio: true,
@@ -22,49 +24,52 @@ const downloadSingleSong = (id) => {
     noPostOverwrites: true,
     concurrentFragments: 4,
     ignoreErrors: true,
-    noPlaylist:true,
+    noPlaylist: true,
     f: "bestaudio",
   });
-}
+};
+
+const getSongMetadata = async (id) => {
+  const url = "https://youtube.com/watch/?v=" + id;
+  const data = await youtubedl(url, {
+    j: true,
+  });
+  return data;
+};
 
 const download = async (url, songLoadedCallback, statusChangedCallback) => {
   await statusChangedCallback(`Getting videos from url...`);
-  try{
+  try {
     let songs = await getVideoIDs(url);
 
     await statusChangedCallback(`Got all videos from url`);
 
-    const progressCallback = async (
-      word,
-      index,
-      length
-    ) => {
-  
+    const progressCallback = async (word, index, length) => {
       await statusChangedCallback(
-        `${word}, ${index+1} / ${length} - ${((index+1) / length) * 100}%`
+        `${word}, ${index + 1} / ${length} - ${((index + 1) / length) * 100}%`
       );
     };
 
-    progressCallback(0, songs.length);
+    await progressCallback("Starting", 0, songs.length);
     for (const [i, id] of songs.entries()) {
       try {
         await doesSongExist(id);
         await progressCallback("Loaded", i, songs.length);
       } catch (e) {
         await progressCallback("Downloading", i, songs.length);
-        await downloadSingleSong(id)
+        await downloadSingleSong(id);
         await progressCallback("Downloaded", i, songs.length);
       }
 
-      await songLoadedCallback([id]);
+      await songLoadedCallback(id);
       await progressCallback("Pushed to queue", i, songs.length);
     }
 
     await progressCallback(
       `Finished loading all songs, adding to queue or playing if queue is empty`
     );
-  }catch(e){
-    await statusChangedCallback("Error occurred when downloading songs: "+e)
+  } catch (e) {
+    await statusChangedCallback("Error occurred when downloading songs: " + e);
   }
 };
-module.exports = { download };
+module.exports = { download, getVideoIDs, getSongMetadata };
