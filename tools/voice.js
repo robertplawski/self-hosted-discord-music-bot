@@ -98,7 +98,7 @@ const playMusic = async (interaction, url) => {
       player.play(resource);
     }
 
-    const songCallback = (downloadedSongs) => {
+    const songLoadedCallback = (downloadedSongs) => {
       console.error("Test");
       console.log(downloadedSongs);
       const hadSongQueued = hasSongQueued(guild.id);
@@ -116,8 +116,10 @@ const playMusic = async (interaction, url) => {
 
       playFromQueue(player, guild.id);
     };
-
-    download(url, songCallback, interaction);
+    const statusChangedCallback = (status)=>interaction.editReply(status)
+    
+    download(url, songLoadedCallback, statusChangedCallback)
+      .then(()=>interaction.deleteReply())
     //await interaction.editReply("Finished the downloading all songs...");
     //}
 

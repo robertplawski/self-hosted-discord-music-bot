@@ -12,69 +12,66 @@ const getVideoIDs = async (url) => {
   return data;
 };
 
-const download = async (url, callback, interaction) => {
+const downloadSingleSong = (id) => {
+return youtubedl("https://youtube.com/watch/?v=" + id, {
+  output: `assets/music/%(id)s.%(ext)s`,
+  ffmpegLocation: ffmpegPath,
+  extractAudio: true,
+  audioFormat: "m4a",
+  noOverwrites: true,
+  noMtime: true,
+  noPostOverwrites: true,
+  concurrentFragments: 4,
+  ignoreErrors: true,
+  noPlaylist:true,
+  f: "bestaudio",
+});
+}
+
+const download = async (url, songLoadedCallback, statusChangedCallback) => {
   const fs = require("fs/promises");
 
   // TypeScript: import ytdl from 'ytdl-core'; with --esModuleInterop
   // TypeScript: import * as ytdl from 'ytdl-core'; with --allowSyntheticDefaultImports
   // TypeScript: import ytdl = require('ytdl-core'); with neither of the above
-  await interaction.editReply(`Getting videos from url...`);
+  await statusChangedCallback(`Getting videos from url...`);
   let songs = (await getVideoIDs(url)).split("\n"); //.split("\n");
-  let i = 1;
-  await interaction.editReply(`Got all videos from url`);
+
+  await statusChangedCallback(`Got all videos from url`);
 
   const progressCallback = async (
+    word,
     index,
-    length,
-    finished = false,
-    loaded = false
+    length
   ) => {
-    const word = loaded
-      ? finished
-        ? "Loaded"
-        : "Loading"
-      : finished
-      ? "Downloaded"
-      : "Downloading";
-    await interaction.editReply(
-      `${word} ${index} / ${length} - ${(index / length) * 100}%`
+ 
+    await statusChangedCallback(
+      `${word}, ${index+1} / ${length} - ${((index+1) / length) * 100}%`
     );
   };
 
   progressCallback(0, songs.length);
-  for (id of songs) {
+  for (const [i, id] of songs.entries()) {
     try {
       //await progressCallback(i, songs.length, false, true);
       await fs.access(createFileFromId(id));
-      await callback([id]);
-      await progressCallback(i, songs.length, true, true);
+      await progressCallback("Loaded", i, songs.length);
     } catch (e) {
-      await progressCallback(i, songs.length, false);
-      await youtubedl("https://youtube.com/watch/?v=" + id, {
-        output: `assets/music/%(id)s.%(ext)s`,
-        ffmpegLocation: ffmpegPath,
-        extractAudio: true,
-        audioFormat: "m4a",
-        noOverwrites: true,
-        noMtime: true,
-        noPostOverwrites: true,
-        concurrentFragments: 4,
-        //exctractorArgs: "youtube:player_client=web",
-        ignoreErrors: true,
-        // noPlaylist:true,
-        f: "bestaudio",
-      });
-      await callback([id]);
-      await progressCallback(i, songs.length, true);
+      await progressCallback("Downloading", i, songs.length);
+      await downloadSingleSong(id)
+      await progressCallback("Downloaded", i, songs.length);
     }
-    i++;
+
+    await songLoadedCallback([id]);
+    await progressCallback("Pushed to queue", i, songs.length);
   }
-  await interaction.editReply(
+
+  await progressCallback(
     `Finished loading all songs, adding to queue or playing if queue is empty`
   );
 
-  setTimeout(() => interaction.deleteReply(), 5000);
+  await setTimeout(() => {}, 5000);
 
-  return { downloadedSongs: songs };
+//  return { downloadedSongs: songs };
 };
 module.exports = { download };
