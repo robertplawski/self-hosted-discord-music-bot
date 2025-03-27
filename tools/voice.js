@@ -18,6 +18,7 @@ const {
 } = require("./queue");
 const { createFileFromId } = require("./path");
 const { extractIdFromUrl } = require("./regex");
+var player;
 
 const joinChannel = async (voiceChannel, guild) => {
   if (voiceChannel?.channelId) {
@@ -39,16 +40,20 @@ async function probeAndCreateResource(readableStream) {
   return createAudioResource(stream, { inputType: type });
 }
 
-const playFromQueue = async (player, guild) => {
-  const { id: songId } = getFromQueue(guild);
-  const songPath = createFileFromId(songId);
+const playFromQueue = async (guild) => {
+  const { id } = getFromQueue(guild);
+  const songPath = createFileFromId(id);
   if (songPath) {
     const resource = await probeAndCreateResource(createReadStream(songPath));
 
     player.play(resource);
   }
 };
-var player;
+
+const skipItemFromQueue = async (guild) => {
+  popFromQueue(guild.id);
+  playFromQueue(guild.id);
+};
 
 const playMusic = async (interaction, url) => {
   const { member, guild, user } = interaction;
@@ -99,7 +104,7 @@ const playMusic = async (interaction, url) => {
         return;
       }
 
-      playFromQueue(player, guild.id);
+      playFromQueue(guild.id);
     };
 
     download(url, songLoadedCallback, changeStatus, user).then(() =>
@@ -108,7 +113,7 @@ const playMusic = async (interaction, url) => {
 
     player.on(AudioPlayerStatus.Idle, async () => {
       popFromQueue(guild.id);
-      playFromQueue(player, guild.id);
+      playFromQueue(guild.id);
     });
 
     return subscription;
@@ -123,4 +128,4 @@ const playMusic = async (interaction, url) => {
   }
 };
 
-module.exports = { getVoiceChannel, playMusic };
+module.exports = { getVoiceChannel, playMusic, skipItemFromQueue };
