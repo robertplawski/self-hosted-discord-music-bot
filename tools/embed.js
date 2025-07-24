@@ -32,12 +32,14 @@ const getQueueEmbed = (queue) => {
   const fields =
     queue.length == 0
       ? defaultFields
-      : queue.map(({ id, title, channel, requestedBy }, index) => {
-          return {
-            name: `${index + 1}. ${title} - ${channel} (${id})`,
-            value: `Added by ${requestedBy}`,
-          };
-        }); //[{ name: "1. song - author ()", value: "Added by ..." }];
+      : queue
+          .map(({ id, title, channel, requestedBy }, index) => {
+            return {
+              name: `${index + 1}. ${title} - ${channel} (${id})`,
+              value: `Added by ${requestedBy}`,
+            };
+          })
+          .splice(0, 5); //[{ name: "1. song - author ()", value: "Added by ..." }];
 
   return (
     new EmbedBuilder()

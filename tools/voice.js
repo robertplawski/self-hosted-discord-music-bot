@@ -51,6 +51,7 @@ const playFromQueue = async (guild) => {
 };
 
 const skipItemFromQueue = async (guildId) => {
+  player.stop();
   popFromQueue(guildId);
   playFromQueue(guildId);
 };
