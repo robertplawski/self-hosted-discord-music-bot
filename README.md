@@ -1,2 +1,3 @@
-# self-hosted-discord-music-bot
+# self-hosted-discord-music-bot (SHDMB for short)
+
 UGH I AM SICK AND TIRED OF DISCORD BOTS NOT WORKING PROPERLY AAAAAAAAAAA

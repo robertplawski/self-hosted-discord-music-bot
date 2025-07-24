@@ -1,0 +1,33 @@
+services:
+  discord:
+    build: ./discord
+    env_file:
+      - ./discord/.env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=shdmb_db
+    depends_on:
+      - postgres
+    volumes:
+      - discord-downloads:/app/downloaded
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=shdmb_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  discord-downloads:
